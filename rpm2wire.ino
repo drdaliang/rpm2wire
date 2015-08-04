@@ -5,12 +5,12 @@ int tachoPin2 = 5;
 int tachoPin3 = 6;
 int tachoPin4 = 7;
 
-// The i2c pins for arduino pro micro is Pin2 and Pin 3.
-const int recordBufferSize = 6;
-int tacho1[recordBufferSize]={0,0,0,0,0,0};
-int tacho2[recordBufferSize]={0,0,0,0,0,0};
-int tacho3[recordBufferSize]={0,0,0,0,0,0} ;
-int tacho4[recordBufferSize]={0,0,0,0,0,0};
+// The i2c pins for arduino pro micro are Pin2 and Pin 3.
+//Here is the buffer for the result. Incrementing accuracy.
+unsigned int tacho1=0;
+unsigned int tacho2=0;
+unsigned int tacho3=0 ;
+unsigned int tacho4=0;
 
 unsigned long tachoBuffer1 = 0;
 unsigned long tachoBuffer2 = 0;
@@ -23,9 +23,7 @@ boolean tachoFlag2 = LOW;
 boolean tachoFlag3 = LOW;
 boolean tachoFlag4 = LOW;
 
-
 byte buf [8];
-
 
 void setup() {
   // put your setup code here, to run once:
@@ -54,7 +52,7 @@ void loop() {
     tachoFlag1 = HIGH;
     tachoBuffer1 = current;
     if (tachoBuffer1 - temp1 > 1500 ) {
-        fifo(tacho1,int(15000000 / (tachoBuffer1 - temp1)));//60/(microseconds*4/1000000)
+        tacho1=(tacho1+(15000000 / (tachoBuffer1 - temp1)))/2;//60/(microseconds*4/1000000)
     }
   }
 
@@ -63,7 +61,7 @@ void loop() {
     tachoFlag1 = LOW;
     tachoBuffer1 = current;
     if (tachoBuffer1 - temp1 > 1500 ) {
-      fifo(tacho1,int(15000000 / (tachoBuffer1 - temp1))); //60/(microseconds*4/1000000)
+      tacho1=(tacho1+15000000 / (tachoBuffer1 - temp1))/2;//60/(microseconds*4/1000000)
     }
   }
 
@@ -74,7 +72,7 @@ void loop() {
     tachoFlag2 = HIGH;
     tachoBuffer2 = current;
     if (tachoBuffer2 - temp2 > 1500 ) {
-        fifo(tacho2,int(7500000 / (tachoBuffer2 - temp2)));//60/(microseconds*4/1000000)
+       tacho2=(tacho2+(7500000 / (tachoBuffer2 - temp2)))/2;//60/(microseconds*4/1000000)
     }
   }
 
@@ -83,7 +81,7 @@ void loop() {
     tachoFlag2 = LOW;
     tachoBuffer2 = current;
     if (tachoBuffer2 - temp2 > 1500 ) {
-      fifo(tacho2,int(7500000 / (tachoBuffer2 - temp2))); //60/(microseconds*4/1000000)
+      tacho2=(tacho2+(7500000 / (tachoBuffer2 - temp2)))/2;//60/(microseconds*4/1000000)
     }
   }
   
@@ -94,7 +92,7 @@ void loop() {
     tachoFlag3 = HIGH;
     tachoBuffer3 = current;
     if (tachoBuffer3 - temp3 > 1500 ) {
-        fifo(tacho3,int(7500000 / (tachoBuffer3 - temp3)));//60/(microseconds*4/1000000)
+        tacho3=(tacho3+(7500000 / (tachoBuffer3 - temp3)))/2;//60/(microseconds*4/1000000)
     }
   }
 
@@ -103,7 +101,7 @@ void loop() {
     tachoFlag3 = LOW;
     tachoBuffer3 = current;
     if (tachoBuffer3 - temp3 > 1500 ) {
-      fifo(tacho3,int(7500000 / (tachoBuffer3 - temp3))); //60/(microseconds*4/1000000)
+      tacho3=(tacho3+(7500000 / (tachoBuffer3 - temp3)))/2;//60/(microseconds*4/1000000)
     }
   }
   //for motor hall 3
@@ -113,7 +111,7 @@ void loop() {
     tachoFlag4 = HIGH;
     tachoBuffer4 = current;
     if (tachoBuffer4 - temp4 > 1500 ) {
-        fifo(tacho4,int(7500000 / (tachoBuffer4 - temp4)));//60/(microseconds*4/1000000)
+       tacho4=(tacho4+(7500000 / (tachoBuffer4- temp4)))/2;//60/(microseconds*4/1000000)
     }
   }
 
@@ -122,7 +120,7 @@ void loop() {
     tachoFlag4 = LOW;
     tachoBuffer4 = current;
     if (tachoBuffer4 - temp4 > 1500 ) {
-      fifo(tacho4,int(7500000 / (tachoBuffer4 - temp4))); //60/(microseconds*4/1000000)
+       tacho4=(tacho4+(7500000 / (tachoBuffer4- temp4)))/2;//60/(microseconds*4/1000000)
     }
   }
   
@@ -132,50 +130,20 @@ void loop() {
 // this function is registered as an event, see setup()
 void requestEvent()
 {
-//  buf [0] = tacho1 >> 24;
-//  buf [1] = (tacho1 >> 16) & 0xFF;
-//  buf [2] = (tacho1 >> 8) & 0xFF;
-//  buf [3] = tacho1 & 0xFF;
-  tacho1[0]=arrayavg(tacho1);
-  tacho2[0]=arrayavg(tacho2);
-  tacho3[0]=arrayavg(tacho3);
-  tacho4[0]=arrayavg(tacho4);
-  buf [0] = tacho1[0] >> 8;
-  buf [1] = (tacho1[0]) & 0xFF;
-  buf [2] = tacho2[0] >> 8;
-  buf [3] = (tacho2[0]) & 0xFF;
-  buf [4] = tacho3[0] >> 8;
-  buf [5] = (tacho3[0]) & 0xFF;
-  buf [6] = tacho4[0] >> 8;
-  buf [7] = (tacho4[0]) & 0xFF; 
-  arrayclear(tacho1);
-  arrayclear(tacho2);
-  arrayclear(tacho3);
-  arrayclear(tacho4);
-  // Serial.println(buf[1]);
-  Wire.write(buf, 8); // respond with message of 6 bytes
-  //Wire.write(tacho1>>8);
-  // as expected by master
+  buf [0] = tacho1>> 8;
+  buf [1] = tacho1 & 0xFF;
+  buf [2] = tacho2 >> 8;
+  buf [3] = tacho2 & 0xFF;
+  buf [4] = tacho3 >> 8;
+  buf [5] = tacho3 & 0xFF;
+  buf [6] = tacho4 >> 8;
+  buf [7] = tacho4 & 0xFF; 
+
+  Wire.write(buf, 8); // respond with message of8 bytes
+  tacho1=0;
+  tacho2=0;
+  tacho3=0;
+  tacho4=0;
 }
 
-void fifo(int* arr, int newvalue){
-  for (int i=1;i<recordBufferSize;i++){
-    arr[i-1] = arr[i];
-    }
-    arr[recordBufferSize-1] = newvalue;
-  }
-
-int arrayavg(int* arr){
-  long sum=0;
-  for (int i=0;i<recordBufferSize;i++){
-    sum += arr[i];
-    }
-    return int(sum/recordBufferSize);
-  }
-  
-  int arrayclear(int* arr){
-  for (int i=0;i<recordBufferSize;i++){
-    arr[i]=0;
-    }
-  }
 
